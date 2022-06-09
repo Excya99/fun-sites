@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">  
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="Brandon Williams"
+        <title></title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        
+        <style>
+            .grid {
+	            outline: 1px solid lightgrey;
+	            display: inline-block;
+                width: 100px;
+                height: 100px;
+                background-color: black;
+            }
+        </style>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+        <script type="text/javascript">
+            var lightsOn = 0;
+            var rows = 0;
+            var columns = 0;
+            var numClicks = 0;
+            // Define grid boundaries to avoid wrap-around
+            var leftBound = [];
+            var rightBound = [];
+            $(document).ready(function() {
+                function startGame() {
+                    rows = parseInt($("#rows").val()); //good practice
+                    columns = parseInt($("#columns").val()); //must explictly cast to integer for use in addition below
+                    $.get("setup.php?rows="+rows+"&columns="+columns, function(data) {
+                        // Building string, then append to game board div last
+                        var gameBoardString = "";
+                        gameBoardString += "<table>";
+                        for(var i=0; i<rows; i++) {
+                            gameBoardString += "<tr>";
+                            for(var j=0; j<columns; j++) {
+                                var id = (i*columns)+j;
+                                gameBoardString += "<td class='grid' id='"+id+"'></td>";
+                            }
+                            gameBoardString += "</tr>";
+                        }
+                        gameBoardString += "</table>";
+                        $("#game_board").append(gameBoardString);
+                        // Prepopulate gameboard with 5 lights on (if gamboard larger than 2x2)
+                        if (data.length > 4) {
+                            for(var i=0; i<data.length; i++) {
+                                $("#"+data[i]).css("background-color", "cyan");
+                            }
+                            lightsOn = 5;
+                        }
+                        // Define grid boundaries to avoid wrap-around
+                        for(var i=0; i<rows; i++) {
+                            for(var j=0; j<columns; j++) {
+                                var id = (i*columns)+j;
+                                if (id%columns == 0) {
+                                    leftBound[i] = id; 
+                                }
+                                else if ((id+1)%columns == 0) {
+                                    rightBound[i] = id;
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                $("button").click(function() {
+                    $("table").remove();
+                    startGame();
+                });
+                //https://stackoverflow.com/questions/6658752/click-event-doesnt-work-on-dynamically-generated-elements
+                $(document).on("click", "td", function() {
+                    numClicks++;
+                    // So that clicking a light that's already on does not trick the counter
+                    if ($(this).css("background-color")=="rgb(0, 0, 0)") { //rgb(0, 0, 0)==black
+                        $(this).css("background-color", "cyan");
+                        lightsOn++;
+                        var current_grid_ID = parseInt($(this).attr("id"));
+                        var left_grid_ID = "#"+(current_grid_ID-1);
+                        var top_grid_ID = "#"+(current_grid_ID-columns);
+                        /* Future caution:
+                        addition implictly dealing with strings whereas subtraction autmatically converts to number
+                        must explicitly cast current_grid_ID and columns to integers
+                        */
+                        var right_grid_ID = "#"+(current_grid_ID+1);
+                        var bottom_grid_ID = "#"+(current_grid_ID+columns);
+                        // Check left grid, make sure not undefined and turn on light
+                        if ((current_grid_ID-1 >= 0) && ($(left_grid_ID).css("background-color")=="rgb(0, 0, 0)") && (leftBound.includes(current_grid_ID)==false)) {
+                            $(left_grid_ID).css("background-color", "cyan");
+                            lightsOn++;
+                        }
+                        // turn off left grid light if already on
+                        else if ((current_grid_ID-1 >= 0) && ($(left_grid_ID).css("background-color")!="rgb(0, 0, 0)") && (leftBound.includes(current_grid_ID)==false)) {
+                            $(left_grid_ID).css("background-color", "rgb(0, 0, 0)");
+                            lightsOn--;
+                        }
+
+                        // Check right grid, make sure not undefined and turn on light
+                        if ((current_grid_ID+1 < rows*columns) && ($(right_grid_ID).css("background-color")=="rgb(0, 0, 0)") && (rightBound.includes(current_grid_ID)==false)) {
+                            $(right_grid_ID).css("background-color", "cyan");
+                            lightsOn++;
+                        }
+                        // turn off right grid light if already on
+                        else if ((current_grid_ID+1 < rows*columns) && ($(right_grid_ID).css("background-color")!="rgb(0, 0, 0)") && (rightBound.includes(current_grid_ID)==false)) {
+                            $(right_grid_ID).css("background-color", "rgb(0, 0, 0)");
+                            lightsOn--;
+                        }
+
+                        // Check top grid, make sure not undefined and turn on light
+                        if ((current_grid_ID-columns >= 0) && ($(top_grid_ID).css("background-color")=="rgb(0, 0, 0)")) {
+                            $(top_grid_ID).css("background-color", "cyan");
+                            lightsOn++;
+                        }
+                        // turn off top grid light if already on
+                        else if ((current_grid_ID-columns >= 0) && ($(top_grid_ID).css("background-color")!="rgb(0, 0, 0)")) {
+                            $(top_grid_ID).css("background-color", "rgb(0, 0, 0)");
+                            lightsOn--;
+                        }
+
+                        // Check bottom grid, make sure not undefined and turn on light
+                        if ((current_grid_ID+columns < rows*columns) && ($(bottom_grid_ID).css("background-color")=="rgb(0, 0, 0)")) {
+                            $(bottom_grid_ID).css("background-color", "cyan");
+                            lightsOn++;
+                        }
+                        // turn off bottom grid light if already on
+                        else if ((current_grid_ID+columns < rows*columns) && ($(bottom_grid_ID).css("background-color")!="rgb(0, 0, 0)")) {
+                            $(bottom_grid_ID).css("background-color", "rgb(0, 0, 0)");
+                            lightsOn--;
+                        }
+
+                        if ((lightsOn) == (rows*columns)) {
+                            alert("YOU HAVE WON!\nYou've turned on all the lights in " + numClicks.toString() + " clicks!\n" + "Click 'Start Game' to play again!")
+                        }
+                    }
+                });
+            });
+        </script>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="row col-xs-8">
+                <h2 align="center">Lights Out</h1>
+            </div>
+            <div class="row">
+                <div class="col-xs-8 mx-auto">
+                <form>
+                    <div class="h-25 p-4 mb-3" align="center">
+                        <h4 align="center">Enter game board dimensions below:</h4>
+                        <input type="number" id="rows" name="rows" placeholder="# of rows i.e. 5">
+                        <input type="number" id="columns" name="columns" placeholder="# of columns i.e. 5">
+                        <button type="button" class="btn btn-info">Start Game</button> <!-- type="button" so page doesn't refresh -->
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div id="game_board" align="center">
+            <h4 align='center'>Lights Out!</h4>
+            <br>
+            <!-- Display game board and play Lights Out -->
+        </div>
+    </body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1"> 
+        <meta name="author" content="Brandon Williams">
+        <title>Part 1</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        <!-- CSS -->
+        <style>
+            body {
+                text-align: center;
+                background-color: white;
+            }
+
+            .input {
+                width: 100%;
+                max-width: 500px;
+                margin: auto;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>Acronym Counter</h1>
+        <h4>Enter acronym and search strings below:</h4>
+        <small class="text-danger">Note: assuming numbers cannot be in acronym during input validation</small>
+        <br>
+        <form class="input">
+            <div>
+                <label for="acronym">Input acronym to use:</label>
+                <input type="text" class="form-control" id="acronym" name="acronym" placeholder="jk lol">
+                <div id="acronymValidation" class="form-text text-danger"></div>
+            </div>
+            <div>
+                <label for="search">Input string to search:</label>
+                <input type="text" class="form-control" id="search" name="search" placeholder="no way just kidding laugh out loud">
+                <div id="searchValidation" class="form-text text-danger"></div>
+            </div>
+            <div>
+                <label for="submit">Click below for acronym summary report</label>
+                <br>
+                <input type="button" class="btn btn-info" id="submit" onclick="summary()" value="Report">
+            </div>
+        </form>
+        <br>
+        <h4>Acronym Report:</h4>
+        <div id="report" class="text-success"></div>
+        <!-- JavaScript -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+        <script>
+            function inputValidation(name_id) {
+                var input = document.getElementById(name_id);
+                var submit = document.getElementById("submit");
+                var errorMsg = document.getElementById(name_id+"Validation");
+                if ((input.value.length > 0) && (/^[A-Za-z\s]+/.test(input.value))) {
+                    input.classList.remove("is-invalid");
+                    submit.disabled = false;
+                    errorMsg.textContent = "";
+                }
+                else {
+                    input.classList.add("is-invalid");
+                    submit.disabled = true;
+                    errorMsg.textContent = "Invalid " + name_id + ", enter some string or use only letters";
+                }
+            }
+
+            function summary() {
+                var report = document.getElementById("report");
+                var acronym = document.getElementById("acronym");
+                var search = document.getElementById("search");
+                var acronymValue = document.getElementById("acronym").value.toLowerCase();
+                var searchValue = document.getElementById("search").value.toLowerCase();
+                // Processing search strings
+                var searchArray = searchValue.split(" ");
+                var allFirstLetters = ""
+                for(var i=0; i<searchArray.length; i++) {
+                    allFirstLetters += searchArray[i][0];
+                }
+                // Processing acronyms
+                var acronymArray = acronymValue.split(" ");
+                var acronymCount = [];
+                var atLeastOneMatch = false;
+                for(var i=0; i<acronymArray.length; i++) {
+                    acronymCount[i] = 0;
+                    var start = 0;
+                    var end = acronymArray[i].length;
+                    while(end <= allFirstLetters.length) {
+                        // Resource: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
+                        if (allFirstLetters.slice(start, end) == acronymArray[i]) {
+                            acronymCount[i] += 1;
+                            atLeastOneMatch = true;
+                        }
+                        start++;
+                        end++;
+                    }
+                }
+                // Output check
+                if (atLeastOneMatch == false) {
+                    report.textContent = "No acronyms found in search string!"
+                    acronym.value = "";
+                    search.value = "";
+                }
+                else {
+                    var summary = "";
+                    for(var i=0; i<acronymArray.length; i++) {
+                        summary += "'" + acronymArray[i] + "' appears " + acronymCount[i] + " times | "; 
+                    }
+                    report.textContent = summary;
+                    acronym.value = "";
+                    search.value = "";
+                }
+            }
+            // Call anonymous function on acronym ID
+            document.getElementById("acronym").addEventListener("keyup", function() {
+                inputValidation("acronym");
+            });
+            // Call anonymous function on search ID
+            document.getElementById("search").addEventListener("keyup", function() {
+                inputValidation("search");
+            });
+        </script>
+    </body>
+</html>
